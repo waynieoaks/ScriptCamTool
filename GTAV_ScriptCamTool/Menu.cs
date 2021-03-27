@@ -2,6 +2,7 @@
 using System.Windows.Forms;
 using System.Drawing;
 using System.Collections.Generic;
+using System.IO;
 using GTA;
 using GTA.Math;
 using GTA.Native;
@@ -12,6 +13,11 @@ namespace GTAV_ScriptCamTool
 {
     public class Menu : Script
     {
+        public static string INIpath = "scripts\\GTAV_ScriptCamTool.ini";
+        public static ScriptSettings IniSettings;
+        public static Keys MenuKey { get; set; }
+        public static Keys MenuModifierKey { get; set; }
+
         UIContainer msgBox = new UIContainer();
         string msgText;
         float msgScale;
@@ -27,6 +33,8 @@ namespace GTAV_ScriptCamTool
 
         public Menu()
         {
+            LoadValuesFromIniFile();
+
             Tick += OnTick;
             KeyUp += KeyIsUp;
             cameraOptionsMenu = new UIMenu("Camera Options", string.Empty);
@@ -142,8 +150,10 @@ namespace GTAV_ScriptCamTool
 
         private void KeyIsUp(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.T)
+            if (e.KeyCode == MenuKey && e.Modifiers == MenuModifierKey)
+            {
                 ToggleMenu();
+            }
         }
 
         private void ToggleMenu()
@@ -256,6 +266,26 @@ namespace GTAV_ScriptCamTool
             Function.Call(Hash.CLEAR_FOCUS);
 
             base.Dispose(A_0);
+        }
+
+        private void LoadValuesFromIniFile()
+        {
+            if (!File.Exists(INIpath))
+            {
+                using (StreamWriter sw = File.CreateText(INIpath))
+                {
+                    sw.WriteLine("[Keybinds]");
+                    sw.WriteLine("# Which key to press to open the menu");
+                    sw.WriteLine("# Use modifier keys to require key combinations, for example Ctrl + T)");
+                    sw.WriteLine("# You can use Alt, Control, Shift, or None as modifier keys.");
+                    sw.WriteLine("Menu_Key = T");
+                    sw.WriteLine("Menu_Modifier = None");
+                }
+            }
+
+            ScriptSettings scriptSettings = ScriptSettings.Load(INIpath);
+            MenuKey = (Keys)scriptSettings.GetValue<Keys>("Keybinds", "Menu_Key", Keys.T);
+            MenuModifierKey = (Keys)scriptSettings.GetValue<Keys>("Keybinds", "Menu_Modifier", Keys.None);
         }
     }
 }
